@@ -39,14 +39,14 @@ export function CoinDetailPage({ coinId, onBack }: CoinDetailPageProps) {
         ]);
 
         setCoinData(detail);
-        
+
         // Format chart data
         const formattedChartData = history.map((point, index) => ({
-          time: new Date(point[0]).toLocaleDateString(),
+          time: point[0], // Keep as timestamp for better formatting
           price: point[1],
           index
         }));
-        
+
         setChartData(formattedChartData);
       } catch (error) {
         console.error('Failed to fetch coin data:', error);
@@ -129,7 +129,7 @@ export function CoinDetailPage({ coinId, onBack }: CoinDetailPageProps) {
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="space-y-4">
           {holding && (
             <PortfolioHoldings
@@ -138,7 +138,7 @@ export function CoinDetailPage({ coinId, onBack }: CoinDetailPageProps) {
               currentPrice={currentPrice}
             />
           )}
-          
+
           <MarketStats marketData={coinData.market_data} />
         </div>
       </div>
@@ -149,7 +149,7 @@ export function CoinDetailPage({ coinId, onBack }: CoinDetailPageProps) {
           <CardTitle>About {coinData.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div 
+          <div
             className="text-sm text-muted-foreground"
             dangerouslySetInnerHTML={{
               __html: coinData.description.en.split('. ')[0] + '.'
