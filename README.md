@@ -2,6 +2,7 @@
 # Crypto Tracker
 
 ## React experiment using barebones ShadCN. Exploring basic UI components with tables, sorting, and an API to fetch data. 
+Live: https://crypto-tracker-eight-nu.vercel.app/
 
 ## Tech Stack
 
