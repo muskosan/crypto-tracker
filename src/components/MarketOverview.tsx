@@ -138,12 +138,12 @@ export function MarketOverview() {
                         )}
                         <span className="text-xs font-medium">{stat.change}</span>
                       </Badge>
-                      {stat.dollarChange && (
+                      {/* {stat.dollarChange && (
                         <span className={`text-xs font-medium ${stat.isPositive ? "text-success" : "text-error"
                           }`}>
                           {stat.isPositive ? '+' : ''}{stat.dollarChange}
                         </span>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 </div>
