@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Star, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
@@ -44,12 +44,21 @@ function formatMarketCap(marketCap: number): string {
   return `$${marketCap.toLocaleString()}`;
 }
 
+type SortField = 'rank' | 'name' | 'price' | '24h' | '7d' | 'market_cap' | 'volume';
+type SortOrder = 'asc' | 'desc' | null;
+
+interface SortState {
+  field: SortField | null;
+  order: SortOrder;
+}
+
 export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
   const { user } = useAuth();
   const { portfolio, addToWatchlist, removeFromWatchlist } = usePortfolio();
   const [cryptoData, setCryptoData] = useState<CoinData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('market_cap_desc');
+  const [sortState, setSortState] = useState<SortState>({ field: null, order: null });
 
   useEffect(() => {
     const fetchCoins = async () => {
@@ -80,7 +89,7 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
     }
 
     const isInWatchlist = portfolio?.watchlist.includes(coinId) || false;
-    
+
     try {
       if (isInWatchlist) {
         await removeFromWatchlist(coinId);
@@ -94,7 +103,112 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
     }
   };
 
-  const displayData = searchResults?.length ? 
+  const handleSort = (field: SortField) => {
+    setSortState(prevState => {
+      if (prevState.field === field) {
+        // Cycle through: asc -> desc -> null
+        if (prevState.order === 'asc') {
+          return { field, order: 'desc' };
+        } else if (prevState.order === 'desc') {
+          return { field: null, order: null };
+        } else {
+          return { field, order: 'asc' };
+        }
+      } else {
+        // New field, start with asc
+        return { field, order: 'asc' };
+      }
+    });
+  };
+
+  const sortData = (data: CoinData[]) => {
+    if (!sortState.field || !sortState.order) {
+      return data;
+    }
+
+    return [...data].sort((a, b) => {
+      let aValue: number | string;
+      let bValue: number | string;
+
+      switch (sortState.field) {
+        case 'rank':
+          aValue = a.market_cap_rank || 999999;
+          bValue = b.market_cap_rank || 999999;
+          break;
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'price':
+          aValue = a.current_price || 0;
+          bValue = b.current_price || 0;
+          break;
+        case '24h':
+          aValue = a.price_change_percentage_24h || 0;
+          bValue = b.price_change_percentage_24h || 0;
+          break;
+        case '7d':
+          aValue = a.price_change_percentage_7d_in_currency || 0;
+          bValue = b.price_change_percentage_7d_in_currency || 0;
+          break;
+        case 'market_cap':
+          aValue = a.market_cap || 0;
+          bValue = b.market_cap || 0;
+          break;
+        case 'volume':
+          aValue = a.total_volume || 0;
+          bValue = b.total_volume || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortState.order === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      const numA = Number(aValue);
+      const numB = Number(bValue);
+
+      return sortState.order === 'asc' ? numA - numB : numB - numA;
+    });
+  };
+
+  const SortableHeader = ({ field, children, align = 'left' }: {
+    field: SortField;
+    children: React.ReactNode;
+    align?: 'left' | 'right' | 'center';
+  }) => {
+    const isActive = sortState.field === field;
+    const order = isActive ? sortState.order : null;
+
+    return (
+      <th
+        className={`p-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
+          }`}
+        onClick={() => handleSort(field)}
+      >
+        <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+          }`}>
+          {children}
+          <div className="flex flex-col">
+            <ChevronUp
+              className={`w-3 h-3 transition-colors ${isActive && order === 'asc' ? 'text-primary' : 'text-muted-foreground/50'
+                }`}
+            />
+            <ChevronDown
+              className={`w-3 h-3 -mt-1 transition-colors ${isActive && order === 'desc' ? 'text-primary' : 'text-muted-foreground/50'
+                }`}
+            />
+          </div>
+        </div>
+      </th>
+    );
+  };
+
+  const baseData = searchResults?.length ?
     searchResults.map(coin => ({
       id: coin.id,
       name: coin.name,
@@ -108,6 +222,8 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
       image: coin.thumb,
       sparkline_in_7d: { price: [] }
     })) : cryptoData;
+
+  const displayData = sortData(baseData);
 
   if (loading) {
     return (
@@ -131,13 +247,13 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-muted-foreground">#</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Name</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Price</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">24h %</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">7d %</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Market Cap</th>
-                  <th className="text-right p-4 font-medium text-muted-foreground">Volume(24h)</th>
+                  <SortableHeader field="rank">#</SortableHeader>
+                  <SortableHeader field="name">Name</SortableHeader>
+                  <SortableHeader field="price" align="right">Price</SortableHeader>
+                  <SortableHeader field="24h" align="right">24h %</SortableHeader>
+                  <SortableHeader field="7d" align="right">7d %</SortableHeader>
+                  <SortableHeader field="market_cap" align="right">Market Cap</SortableHeader>
+                  <SortableHeader field="volume" align="right">Volume(24h)</SortableHeader>
                   <th className="text-center p-4 font-medium text-muted-foreground">Last 7 Days</th>
                   <th className="text-center p-4 font-medium text-muted-foreground"></th>
                 </tr>
@@ -147,7 +263,7 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                   const isInWatchlist = portfolio?.watchlist.includes(crypto.id) || false;
                   const change24h = crypto.price_change_percentage_24h || 0;
                   const change7d = crypto.price_change_percentage_7d_in_currency || 0;
-                  
+
                   return (
                     <tr
                       key={crypto.id}
@@ -164,11 +280,10 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                             disabled={!user}
                           >
                             <Star
-                              className={`w-4 h-4 ${
-                                isInWatchlist
+                              className={`w-4 h-4 ${isInWatchlist
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-muted-foreground"
-                              }`}
+                                }`}
                             />
                           </Button>
                           <span className="text-muted-foreground">{crypto.market_cap_rank || '-'}</span>
@@ -204,11 +319,10 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                         {crypto.current_price ? (
                           <Badge
                             variant={change24h >= 0 ? "default" : "destructive"}
-                            className={`flex items-center space-x-1 justify-end ${
-                              change24h >= 0
+                            className={`flex items-center space-x-1 justify-end ${change24h >= 0
                                 ? "bg-success/10 text-success hover:bg-success/10"
                                 : "bg-error/10 text-error hover:bg-error/10"
-                            }`}
+                              }`}
                           >
                             {change24h >= 0 ? (
                               <TrendingUp className="w-3 h-3" />
@@ -254,8 +368,8 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                         )}
                       </td>
                       <td className="p-4">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();

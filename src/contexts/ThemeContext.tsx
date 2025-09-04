@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -23,9 +23,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(initialTheme);
   }, []);
 
-  const applyTheme = (newTheme: Theme) => {
+  const applyTheme = useCallback((newTheme: Theme, skipTransition = false) => {
     const root = document.documentElement;
     
+    // Apply theme change immediately - no delays
     if (newTheme === 'dark') {
       root.classList.add('dark');
     } else {
@@ -33,18 +34,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     
     localStorage.setItem('theme', newTheme);
-  };
+  }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     applyTheme(newTheme);
-  };
+  }, [theme, applyTheme]);
 
-  const handleSetTheme = (newTheme: Theme) => {
+  const handleSetTheme = useCallback((newTheme: Theme) => {
     setTheme(newTheme);
     applyTheme(newTheme);
-  };
+  }, [applyTheme]);
 
   const value = {
     theme,
