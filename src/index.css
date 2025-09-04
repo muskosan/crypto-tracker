@@ -121,7 +121,7 @@
     --default-mono-font-feature-settings: var(--font-mono--font-feature-settings);
     --default-mono-font-variation-settings: var(--font-mono--font-variation-settings);
     --color-border: var(--border);
-    --font-family-serif: "Playfair Display", serif;
+    --font-family-serif: "Georgia", serif;
   }
 }
 
