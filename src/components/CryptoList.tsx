@@ -9,10 +9,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { toast } from 'sonner@2.0.3';
+import { FilterCategory, SortOption } from './CryptoFilters';
 
 interface CryptoListProps {
   onCoinSelect: (coinId: string) => void;
   searchResults?: any[];
+  filterCategory: FilterCategory;
+  sortOption: SortOption;
 }
 
 function formatPrice(price: number): string {
@@ -52,7 +55,7 @@ interface SortState {
   order: SortOrder;
 }
 
-export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
+export function CryptoList({ onCoinSelect, searchResults, filterCategory, sortOption }: CryptoListProps) {
   const { user } = useAuth();
   const { portfolio, addToWatchlist, removeFromWatchlist } = usePortfolio();
   const [cryptoData, setCryptoData] = useState<CoinData[]>([]);
@@ -64,7 +67,7 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
     const fetchCoins = async () => {
       setLoading(true);
       try {
-        const coins = await CryptoAPI.getCoins(1, 50, sortBy);
+        const coins = await CryptoAPI.getCoins(1, 50, sortOption);
         setCryptoData(coins);
       } catch (error) {
         console.error('Failed to fetch coins:', error);
@@ -79,7 +82,7 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
     } else {
       setLoading(false);
     }
-  }, [sortBy, searchResults]);
+  }, [sortOption, searchResults]);
 
   const handleWatchlistToggle = async (coinId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -223,7 +226,27 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
       sparkline_in_7d: { price: [] }
     })) : cryptoData;
 
-  const displayData = sortData(baseData);
+  const filterData = (data: CoinData[]) => {
+    if (searchResults?.length) {
+      // Don't filter search results
+      return data;
+    }
+
+    switch (filterCategory) {
+      case 'favorites':
+        return data.filter(coin => portfolio?.watchlist.includes(coin.id));
+      case 'gainers':
+        return data.filter(coin => (coin.price_change_percentage_24h || 0) > 0);
+      case 'losers':
+        return data.filter(coin => (coin.price_change_percentage_24h || 0) < 0);
+      case 'all':
+      default:
+        return data;
+    }
+  };
+
+  const filteredData = filterData(baseData);
+  const displayData = sortData(filteredData);
 
   if (loading) {
     return (
@@ -281,8 +304,8 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                           >
                             <Star
                               className={`w-4 h-4 ${isInWatchlist
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-muted-foreground"
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
                                 }`}
                             />
                           </Button>
@@ -320,8 +343,8 @@ export function CryptoList({ onCoinSelect, searchResults }: CryptoListProps) {
                           <Badge
                             variant={change24h >= 0 ? "default" : "destructive"}
                             className={`flex items-center space-x-1 justify-end ${change24h >= 0
-                                ? "bg-success/10 text-success hover:bg-success/10"
-                                : "bg-error/10 text-error hover:bg-error/10"
+                              ? "bg-success/10 text-success hover:bg-success/10"
+                              : "bg-error/10 text-error hover:bg-error/10"
                               }`}
                           >
                             {change24h >= 0 ? (

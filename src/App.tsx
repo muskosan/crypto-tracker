@@ -1,7 +1,7 @@
 import { useState, useTransition } from 'react';
 import { Header } from "./components/Header";
 import { MarketOverview } from "./components/MarketOverview";
-import { CryptoFilters } from "./components/CryptoFilters";
+import { CryptoFilters, FilterCategory, SortOption } from "./components/CryptoFilters";
 import { CryptoList } from "./components/CryptoList";
 import { CoinDetailPage } from "./components/CoinDetailPage";
 import { PortfolioDashboard } from "./components/PortfolioDashboard";
@@ -17,6 +17,8 @@ export default function App() {
   const [selectedCoinId, setSelectedCoinId] = useState<string>('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<FilterCategory>('all');
+  const [sortOption, setSortOption] = useState<SortOption>('market_cap_desc');
 
   const handlePageTransition = (newPage: Page, coinId?: string) => {
     setIsTransitioning(true);
@@ -47,6 +49,14 @@ export default function App() {
     setSearchResults(results);
   };
 
+  const handleCategoryChange = (category: FilterCategory) => {
+    setFilterCategory(category);
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    setSortOption(sort);
+  };
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -60,10 +70,17 @@ export default function App() {
               {currentPage === 'market' && (
                 <>
                   <MarketOverview />
-                  <CryptoFilters />
+                  <CryptoFilters 
+                    selectedCategory={filterCategory}
+                    selectedSort={sortOption}
+                    onCategoryChange={handleCategoryChange}
+                    onSortChange={handleSortChange}
+                  />
                   <CryptoList 
                     onCoinSelect={handleCoinSelect}
                     searchResults={searchResults.length > 0 ? searchResults : undefined}
+                    filterCategory={filterCategory}
+                    sortOption={sortOption}
                   />
                 </>
               )}

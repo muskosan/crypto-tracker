@@ -1,11 +1,27 @@
 
-  # Crypto Market Interface
+# Crypto Tracker
 
-  This is a code bundle for Crypto Market Interface. The original project is available at https://www.figma.com/design/sWB7Tx5fMYYUtqFkIXAusB/Crypto-Market-Interface.
+## React experiment using barebones ShadCN. Exploring basic UI components with tables, sorting, and an API to fetch data. 
 
-  ## Running the code
+## Tech Stack
 
-  Run `npm i` to install the dependencies.
+- **React** + **TypeScript** + **Vite**
+- **Tailwind CSS** for styling
+- **ShadCN UI** components
+- **Radix UI** primitives
+- **CoinGecko API** for crypto data
 
-  Run `npm run dev` to start the development server.
-  
+## Features
+
+- Real-time cryptocurrency prices and market data
+- Sortable and filterable coin listings
+- Portfolio tracking and watchlist
+- Dark/light theme support
+- Responsive design
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
